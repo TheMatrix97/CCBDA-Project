@@ -6,6 +6,9 @@ class Person:
         self.init_agenda(type)
         self.infection = None
         self.phone = []
+        self.workplace = None
+        self.home = None
+        self.school = None
 
     def init_agenda(self, type):
         if type == 'student':
@@ -16,3 +19,12 @@ class Person:
             self.agenda = ['H', 'H', 'H', 'H']
         elif type == 'elderly':
             self.agenda = ['H', 'R', 'H', 'H']
+
+    def set_workplace(self, workplace):
+        self.workplace = workplace
+
+    def set_home(self, home):
+        self.home = home
+
+    def set_school(self, school):
+        self.school = school
