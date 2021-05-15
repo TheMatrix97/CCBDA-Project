@@ -202,7 +202,9 @@ class Simulation:
                     node_dest.add_person(person)
 
     def create_assign_nodes(self, type_a, people, max_num, min_num, count):
-        determine_num = random.randint(int(len(people) / min_num), int(len(people) / max_num))
+        n_num_calc = int(len(people) / min_num) if int(len(people) / min_num) > 0 else 1 #set min to 1
+        n_num_calc_max = int(len(people) / max_num) if int(len(people) / max_num) > 0 else 1 #set min to 1
+        determine_num = random.randint(n_num_calc, n_num_calc_max)
         nodes = []
         for i in range(count, determine_num + count):
             node = Node(i, type_a)
