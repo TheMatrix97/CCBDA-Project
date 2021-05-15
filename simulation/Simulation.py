@@ -188,10 +188,10 @@ class Simulation:
 
         elif person.infection is Infection.INFECTION_SIMP:
             if person.time_start_infection >= self.incubation + self.time_infection:
-                max_lim = 10
+                max_lim = self.mortality
                 if person.type == 'elderly':
                     # Increment prob to die to 60%
-                    max_lim = 60
+                    max_lim = self.mortality * 2
                 # Change to infected 10% death 90% alive
                 output = random.randint(0, 100)
                 if 0 <= output < max_lim:
@@ -287,11 +287,11 @@ class Simulation:
             person.infection = Infection.INFECTION_ASIMP
             person.time_start_infection = self.incubation
             self.infected += 1
-        elif 10 <= rand < 15:
+        elif 10 <= rand < 10 + self.symptomatic:
             person.infection = Infection.INFECTION_SIMP
             person.time_start_infection = self.incubation
             self.infected += 1
-        elif 15 <= rand < 15 + self.immunity:
+        elif 10 + self.symptomatic <= rand < 10 + self.symptomatic + self.immunity:
             person.infection = Infection.IMMUNE
             self.immune += 1
 
