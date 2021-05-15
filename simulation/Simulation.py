@@ -2,7 +2,7 @@ import random
 import Person
 from simulation.City import City
 from simulation.Node import Node
-from simulation.Type import Type
+from simulation.Type import Type, Infection
 import numpy as np
 
 
@@ -11,17 +11,21 @@ class Simulation:
         self.elderly = []
         self.workers = []
         self.students = []
-        self.population = self.generate_population(individuals)
+        self.immunity = immunity
         self.incubation = incubation
         self.symptomatic = symptomatic
-        self.immunity = immunity
         self.mortality = mortality
+        self.infected = 0
+        self.dead = 0
+        self.immune = 0
+        self.population = self.generate_population(individuals)
         self.city = City(size_factor_city)
         self.generate_nodes()
         self.round = 0
         self.matrix_distance = None
+        self.time_infection = 15 * 4  # 15 dies
 
-    def generate_nodes(self): #Our population is assigned
+    def generate_nodes(self):  # Our population is assigned
         # Workplaces
         count = self.create_assign_nodes(Type.WORKPLACE, self.workers, 20, 40, 0)
 
@@ -42,7 +46,7 @@ class Simulation:
         j = 0
         for nodex in nodesx:
             for nodey in nodesy:
-                #CalcDistance
+                # CalcDistance
                 aux2 = nodesy[nodey]
                 aux1 = nodesx[nodex]
                 distance = self.calc_distance(aux1, aux2)
@@ -50,13 +54,13 @@ class Simulation:
                 j += 1
             i += 1
             j = 0
+
     @staticmethod
     def calc_distance(node1, node2):
         return pow(pow((node1.x - node2.x), 2) + pow((node1.y - node2.y), 2), 0.5)
 
-
     def start_simulation(self):
-        #Gen distance matrix
+        # Gen distance matrix
         self.generate_distance_matrix()
         # Move everyone to home
         for person in self.population:
@@ -67,6 +71,113 @@ class Simulation:
         self.round = 1
 
     def advance_round(self):
+        # calculate infec
+        self.calculate_infections()
+        self.run_agenda()
+        self.round += 1
+
+    def calculate_infections(self):
+        nodes = self.city.get_nodes()
+        for node_aux in nodes:
+            node = nodes[node_aux]
+            self.calculate_infection_inside_node(node)
+
+    def calculate_infection_inside_node(self, node):
+        # Itera sobre persones del node i infecta als que toqui
+        # How many people occupy the room
+        # Time
+        # Tipus de lloc
+        n_people = len(node.people_in_this_node)
+        prob_infect = 0
+        # Gather probability of getting infected
+        for person in node.people_in_this_node:
+            if person.infection is Infection.DEATH or person.infection is Infection.IMMUNE:
+                continue
+            self.detect_quarantine(person)
+            self.detect_infected(person)
+            state_person = person.infection
+            if state_person == Infection.INCUBATION:
+                prob_infect += 1
+            elif state_person == Infection.INFECTION_SIMP:
+                prob_infect += 2
+            elif state_person == Infection.INFECTION_ASIMP:
+                prob_infect += 1.5
+
+        if n_people != 0:
+            if prob_infect > n_people:
+                prob_infect = n_people
+            prob_infect = (prob_infect / n_people) * 100  # Normalize to 1
+
+            for person in node.people_in_this_node:
+                if person.infection is None:
+                    output = random.randint(0, 100)
+                    if 0 <= output < prob_infect:
+                        person.infection = Infection.INCUBATION
+                        person.time_start_infection = 0
+                elif person.infection is not Infection.DEATH or person.infection is not Infection.IMMUNE:
+                    person.time_start_infection += 1
+                    self.change_state(person)
+                # Process States of this person
+
+    @staticmethod
+    def detect_infected(person):
+        if person.infection is Infection.INFECTION_SIMP and person.time_start_quarantine is None:
+            person.set_quarantine()
+
+    def detect_quarantine(self, person):
+        if person.is_quarantine():
+            if person.time_start_quarantine >= self.time_infection:
+                person.init_agenda(person.type)
+                self.change_state_person(person, Infection.IMMUNE)
+                person.time_start_quarantine = None
+            else:
+                person.time_start_quarantine += 1
+
+    def change_state_person(self, person, new_state):
+        old_state = person.infection
+        person.infection = new_state
+        if new_state is Infection.INFECTION_ASIMP or new_state is Infection.INFECTION_SIMP or new_state is Infection.INCUBATION:
+            self.infected += 1
+        elif new_state is Infection.DEATH:
+            self.dead += 1
+        elif new_state is Infection.IMMUNE:
+            self.immune += 1
+
+        if new_state is Infection.INFECTION_ASIMP or new_state is Infection.INFECTION_SIMP:
+            person.time_start_infection = 0
+
+        if old_state is Infection.INFECTION_ASIMP or old_state is Infection.INFECTION_SIMP or old_state is Infection.INCUBATION:
+            self.infected -= 1
+
+    def change_state(self, person):
+        # self.incubation = temps d'incubació
+        if person.infection is Infection.INCUBATION:
+            if person.time_start_infection >= self.incubation:
+                # Change to infected (30% asimp 70% non asimp
+                output = random.randint(0, 100)
+                if 0 <= output < 30:
+                    self.change_state_person(person, Infection.INFECTION_ASIMP)
+                else:
+                    self.change_state_person(person, Infection.INFECTION_SIMP)
+
+        elif person.infection is Infection.INFECTION_SIMP:
+            if person.time_start_infection >= self.incubation + self.time_infection:
+                max_lim = 10
+                if person.type == 'elderly':
+                    # Increment prob to die to 60%
+                    max_lim = 60
+                # Change to infected 10% death 90% alive
+                output = random.randint(0, 100)
+                if 0 <= output < max_lim:
+                    self.change_state_person(person, Infection.DEATH)
+                else:
+                    self.change_state_person(person, Infection.IMMUNE)
+
+        elif person.infection is Infection.INFECTION_ASIMP:
+            if person.time_start_infection >= self.incubation + self.time_infection:
+                self.change_state_person(person, Infection.IMMUNE)
+
+    def run_agenda(self):
         nodes = self.city.get_nodes()
         for node_aux in nodes:
             node = nodes[node_aux]
@@ -84,13 +195,11 @@ class Simulation:
                     aux = list(self.city.get_nodes().keys()).index(id_loc)
                     on_puc_anar_rec = self.matrix_distance[aux]
                     on_puc_anar_index = np.argsort(on_puc_anar_rec)
-                    #Choose random 10
+                    # Choose random 10
                     n = random.randint(0, 9)
                     key = list(self.city.others.keys())[on_puc_anar_index[n]]
                     node_dest = self.city.others[key]
                     node_dest.add_person(person)
-        self.round += 1
-
 
     def create_assign_nodes(self, type_a, people, max_num, min_num, count):
         determine_num = random.randint(int(len(people) / min_num), int(len(people) / max_num))
@@ -104,7 +213,7 @@ class Simulation:
         for node in nodes:
             people_assignment = 0
             is_empty = True
-            while people_assignment < int(capacity+1) and count_people < len(people):
+            while people_assignment < int(capacity + 1) and count_people < len(people):
                 if is_empty:
                     is_empty = False
                 if type_a == Type.WORKPLACE:
@@ -117,8 +226,7 @@ class Simulation:
                 people_assignment += 1
             if not is_empty:
                 self.city.add_node(type_a, node)
-        return determine_num+count
-
+        return determine_num + count
 
     def generate_population(self, individuals):
         population = []
@@ -127,16 +235,34 @@ class Simulation:
             rand = random.randint(0, 100)
             if 0 <= rand < 25:
                 aux = Person.Person(i, 'student')
-                population.append(aux)
                 self.students.append(aux)
             elif 25 <= rand < 80:
                 aux = Person.Person(i, 'worker')
-                population.append(aux)
                 self.workers.append(aux)
             else:
                 aux = Person.Person(i, 'elderly')
-                population.append(aux)
                 self.elderly.append(aux)
+            self.assign_init_infection(aux)
+            population.append(aux)
+
             individuals = individuals - 1
             i = i + 1
         return population
+
+    def assign_init_infection(self, person):
+        rand = random.randint(0, 100)
+        if 0 <= rand < 5:
+            person.infection = Infection.INCUBATION
+            person.time_start_infection = 0
+            self.infected += 1
+        elif 5 <= rand < 10:
+            person.infection = Infection.INFECTION_ASIMP
+            person.time_start_infection = self.incubation
+            self.infected += 1
+        elif 10 <= rand < 15:
+            person.infection = Infection.INFECTION_SIMP
+            person.time_start_infection = self.incubation
+            self.infected += 1
+        elif 15 <= rand < 15 + self.immunity:
+            person.infection = Infection.IMMUNE
+            self.immune += 1

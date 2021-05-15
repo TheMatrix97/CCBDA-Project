@@ -1,10 +1,11 @@
-
 class Person:
     def __init__(self, id, type):
         self.id = id
         self.type = type
         self.init_agenda(type)
-        self.infection = None
+        self.infection = None  # Incubació (asimptomatic), Infecció (asimptomatic o simptomàtic), Inmune, Mort
+        self.time_start_infection = 0
+        self.time_start_quarantine = 0
         self.phone = []
         self.workplace = None
         self.home = None
@@ -15,8 +16,6 @@ class Person:
             self.agenda = ['H', 'S', 'R', 'H']
         elif type == 'worker':
             self.agenda = ['H', 'W', 'R', 'H']
-        elif type == 'stay-at-home':
-            self.agenda = ['H', 'H', 'H', 'H']
         elif type == 'elderly':
             self.agenda = ['H', 'R', 'H', 'H']
 
@@ -28,3 +27,10 @@ class Person:
 
     def set_school(self, school):
         self.school = school
+
+    def set_quarantine(self):
+        self.agenda = ['H', 'H', 'H', 'H']
+        self.time_start_quarantine = 0
+
+    def is_quarantine(self):
+        return self.agenda == ['H', 'H', 'H', 'H']

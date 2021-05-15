@@ -1,7 +1,6 @@
-
 class Node:
 
-    def __init__(self, id ,type):
+    def __init__(self, id, type):
         self.type = type
         self.id = id
         self.people_in_this_node = []

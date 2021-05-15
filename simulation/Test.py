@@ -8,6 +8,5 @@ def test():
         simulation.advance_round()
 
 
-
 if __name__ == "__main__":
     test()
