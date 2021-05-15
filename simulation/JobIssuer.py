@@ -10,7 +10,7 @@ def wait_until_queue_end(url):
     end = False
     while not end:
         time.sleep(10)
-        response = client_sqs.get_queue_attributes(QueueUrl=queue.url, AttributeNames=['ApproximateNumberOfMessages'])
+        response = client_sqs.get_queue_attributes(QueueUrl=url, AttributeNames=['ApproximateNumberOfMessages'])
         n_messages = int(response['Attributes']['ApproximateNumberOfMessages'])
         end = n_messages == 0
 
