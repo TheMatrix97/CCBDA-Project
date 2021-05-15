@@ -41,6 +41,29 @@ class Simulation:
         self.sim_data = response['Item']
         print('He trobat una simulacio')
 
+    def save_stats_dynamodb(self):
+        table = dynamodb.Table('Simulations')
+        response = table.update_item(
+            Key={
+                'id': self.id_simulacio,
+            },
+            UpdateExpression="SET stats.infected = :inf + stats.infected, stats.dead = :dead + stats.dead, "
+                             "stats.immune = :immune + stats.immune)",
+            ExpressionAttributeValues={
+                ":inf": self.infected,
+                ":dead": self.dead,
+                ":immune": self.immune,
+            },
+            ReturnValues="NONE"
+        )
+        print(response)
+
+    def save_node_dynamodb(self):
+        table = dynamodb.Table("City1")
+        resp = table.put_item(Item=utils.serialize_node(self.node))
+        print(resp)
+
+
     def advance_round(self):
         # calculate infec
         self.calculate_infection_inside_node(self.node)
@@ -48,6 +71,13 @@ class Simulation:
         self.round += 1
         if self.beacons:
             self.reduce_beacons_list()
+
+        #Save Stats to dynamoDB (update simulation stats)
+        self.save_stats_dynamodb()
+
+        self.save_node_dynamodb()
+
+        #Save node to dynamodb
         print("Infected people: " + str(self.infected))
         print("Dead people: " + str(self.dead))
         print("Immune people: " + str(self.immune))
@@ -59,14 +89,12 @@ class Simulation:
             move = self.round % 4
             self.node.people_in_this_node.remove(person)
             if person.agenda[move] == 'H':
-                #TODO edit directly to dynamodb
                 self.add_person_remote_node(person, person.home)
             elif person.agenda[move] == 'W':
                 self.add_person_remote_node(person, person.workplace)
             elif person.agenda[move] == 'S':
                 self.add_person_remote_node(person, person.school)
             elif person.agenda[move] == 'R':
-                # TODO Problema, no tenim els nodes
                 n = random.randint(self.start_others, self.end_others)
                 #N id to move
                 self.add_person_remote_node(person, n)
