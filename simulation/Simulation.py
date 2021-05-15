@@ -75,6 +75,9 @@ class Simulation:
         self.calculate_infections()
         self.run_agenda()
         self.round += 1
+        print("Infected people: "+str(self.infected))
+        print("Dead people: " + str(self.dead))
+        print("Immune people: " + str(self.immune))
 
     def calculate_infections(self):
         nodes = self.city.get_nodes()
