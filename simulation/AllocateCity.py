@@ -34,6 +34,7 @@ def create_table_dynamodb():
     )
     print(response)
 
+
 def de_serialize_node(data):
     new_type = data['type'].replace("Type.", "")
     node = Node(data['id'], Type[new_type])
@@ -121,6 +122,25 @@ def read_city_dynamodb():
         res.append(de_serialize_node(item))
     print(len(res))
 
+def save_simulation(simulation):
+    table = dynamodb.Table("Simulations")
+    table.put_item(Item={
+        'id': 1,
+        'max_rounds': 30*4,
+        'immunity': simulation.immunity,
+        'incubation': simulation.incubation,
+        'symptomatic': simulation.symptomatic,
+        'mortality': simulation.mortality,
+        'beacons': simulation.beacons,
+        'round': simulation.round,
+        'time_infection': simulation.time_infection,
+        'stats':{
+            'dead': 0,
+            'immune': 0,
+            'infected': 0
+        }
+    })
+
 
 def allocate_city():
     individuals = 2000
@@ -131,6 +151,7 @@ def allocate_city():
     beacons = True
     scale_city = 200
     simulation = Simulation(individuals, incubation, symptomatic, immunity, mortality, beacons, scale_city)
+    save_simulation(simulation)
     simulation.start_simulation()
     return simulation.city
 
