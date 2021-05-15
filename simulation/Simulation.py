@@ -75,7 +75,7 @@ class Simulation:
         self.calculate_infections()
         self.run_agenda()
         self.round += 1
-        print("Infected people: "+str(self.infected))
+        print("Infected people: " + str(self.infected))
         print("Dead people: " + str(self.dead))
         print("Immune people: " + str(self.immune))
 
@@ -115,8 +115,7 @@ class Simulation:
                 if person.infection is None:
                     output = random.randint(0, 100)
                     if 0 <= output < prob_infect:
-                        person.infection = Infection.INCUBATION
-                        person.time_start_infection = 0
+                        self.change_state(person)
                 elif person.infection is not Infection.DEATH or person.infection is not Infection.IMMUNE:
                     person.time_start_infection += 1
                     self.change_state(person)
@@ -137,19 +136,15 @@ class Simulation:
                 person.time_start_quarantine += 1
 
     def change_state_person(self, person, new_state):
-        old_state = person.infection
         person.infection = new_state
-        if new_state is Infection.INFECTION_ASIMP or new_state is Infection.INFECTION_SIMP or new_state is Infection.INCUBATION:
+        if new_state is Infection.INCUBATION:
             self.infected += 1
+            person.time_start_infection = 0
         elif new_state is Infection.DEATH:
             self.dead += 1
+            self.infected -= 1
         elif new_state is Infection.IMMUNE:
             self.immune += 1
-
-        if new_state is Infection.INFECTION_ASIMP or new_state is Infection.INFECTION_SIMP:
-            person.time_start_infection = 0
-
-        if old_state is Infection.INFECTION_ASIMP or old_state is Infection.INFECTION_SIMP or old_state is Infection.INCUBATION:
             self.infected -= 1
 
     def change_state(self, person):
@@ -162,6 +157,8 @@ class Simulation:
                     self.change_state_person(person, Infection.INFECTION_ASIMP)
                 else:
                     self.change_state_person(person, Infection.INFECTION_SIMP)
+        elif person.infection is None:
+            self.change_state_person(person, Infection.INCUBATION)
 
         elif person.infection is Infection.INFECTION_SIMP:
             if person.time_start_infection >= self.incubation + self.time_infection:
@@ -205,8 +202,8 @@ class Simulation:
                     node_dest.add_person(person)
 
     def create_assign_nodes(self, type_a, people, max_num, min_num, count):
-        n_num_calc = int(len(people) / min_num) if int(len(people) / min_num) > 0 else 1 #set min to 1
-        n_num_calc_max = int(len(people) / max_num) if int(len(people) / max_num) > 0 else 1 #set min to 1
+        n_num_calc = int(len(people) / min_num) if int(len(people) / min_num) > 0 else 1  # set min to 1
+        n_num_calc_max = int(len(people) / max_num) if int(len(people) / max_num) > 0 else 1  # set min to 1
         determine_num = random.randint(n_num_calc, n_num_calc_max)
         nodes = []
         for i in range(count, determine_num + count):
