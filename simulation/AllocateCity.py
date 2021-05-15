@@ -136,5 +136,5 @@ def allocate_city():
 
 if __name__ == "__main__":
     #create_table_dynamodb()
-    #store_city_dynamodb()
-    read_city_dynamodb()
+    store_city_dynamodb()
+    #read_city_dynamodb()
