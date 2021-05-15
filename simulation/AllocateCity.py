@@ -1,7 +1,11 @@
 import json
 
+from simulation.Node import Node
+from simulation.Person import Person
 from simulation.Simulation import Simulation
 import boto3
+
+from simulation.Type import Type, Infection
 
 client = boto3.client('dynamodb')
 dynamodb = boto3.resource('dynamodb')
@@ -29,6 +33,33 @@ def create_table_dynamodb():
         }
     )
     print(response)
+
+def de_serialize_node(data):
+    new_type = data['type'].replace("Type.", "")
+    node = Node(data['id'], Type[new_type])
+    node.x = data['x']
+    node.y = data['y']
+    node.people_in_this_node = de_serialize_people(data['people_in_this_node'])
+    return node
+
+def de_serialize_people(data):
+    res = []
+    for person in data:
+        pers = Person(person['id'], person['type'])
+        pers.agenda = json.loads(person['agenda'])
+        new_infection = person['infection'].replace("Infection.","")
+        if new_infection != 'None':
+            pers.infection = Infection[new_infection]
+        else:
+            pers.infection = None
+        pers.time_start_infection = person['time_start_infection']
+        pers.time_start_quarantine = person['time_start_quarantine']
+        pers.beacons = json.loads(person['beacons'])
+        pers.workplace = person['workplace']
+        pers.home = person['home']
+        pers.school = person['school']
+        res.append(pers)
+    return res
 
 def serialize_node(node):
     if node is None:
@@ -69,6 +100,27 @@ def store_city_dynamodb():
             print(json_str)
             batch.put_item(Item=json_str)
 
+def read_city_dynamodb():
+    finish = False
+    items = []
+    start_key = None
+    table = dynamodb.Table('City1')
+    while not finish:
+        if start_key:
+            response = table.scan(ExclusiveStartKey=start_key)
+        else:
+            response = table.scan()
+        items.extend(response['Items'])
+        if 'LastEvaluatedKey' not in response:
+            finish = True
+        else:
+            start_key = response['LastEvaluatedKey']
+
+    res = []
+    for item in items:
+        res.append(de_serialize_node(item))
+    print(len(res))
+
 
 def allocate_city():
     individuals = 2000
@@ -83,4 +135,6 @@ def allocate_city():
     return simulation.city
 
 if __name__ == "__main__":
-    store_city_dynamodb()
+    #create_table_dynamodb()
+    #store_city_dynamodb()
+    read_city_dynamodb()
