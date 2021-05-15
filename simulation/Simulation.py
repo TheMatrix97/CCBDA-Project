@@ -1,3 +1,4 @@
+import copy
 import random
 import Person
 from simulation.City import City
@@ -18,6 +19,7 @@ class Simulation:
         self.infected = 0
         self.dead = 0
         self.immune = 0
+        self.beacons = beacons
         self.population = self.generate_population(individuals)
         self.city = City(size_factor_city)
         self.generate_nodes()
@@ -70,20 +72,41 @@ class Simulation:
                 print(person.id)
         self.round = 1
 
+    def reduce_beacons_list(self):
+        for person in self.population:
+            for item in person.beacons:
+                item['count'] -= 1
+                if item['count'] <= 0:
+                    person.beacons.remove(item)
+
     def advance_round(self):
         # calculate infec
         self.calculate_infections()
         self.run_agenda()
         self.round += 1
+        if self.beacons:
+            self.reduce_beacons_list()
         print("Infected people: " + str(self.infected))
         print("Dead people: " + str(self.dead))
         print("Immune people: " + str(self.immune))
+        #print("Healthy people: " + str(sum(1 for p in self.population if p.infection is None)))
+        #print("All people: " + str(self.infected + self.dead + self.immune + sum(1 for p in self.population if p.infection is None)))
 
     def calculate_infections(self):
         nodes = self.city.get_nodes()
         for node_aux in nodes:
             node = nodes[node_aux]
             self.calculate_infection_inside_node(node)
+
+    def add_people_beacon(self, person, people_in_this_node):
+        people_to_add = [p for p in people_in_this_node if p.id != person.id]
+        aux_beacons_people = [p['person'] for p in person.beacons]
+        for p_aux in people_to_add:
+            if p_aux not in aux_beacons_people:
+                person.beacons.append({'person': p_aux, 'count': copy.copy(self.incubation)})
+            else:
+                aux = [p for p in person.beacons if p['person'].id == p_aux.id]
+                aux[0]['count'] = copy.copy(self.incubation)
 
     def calculate_infection_inside_node(self, node):
         # Itera sobre persones del node i infecta als que toqui
@@ -105,6 +128,8 @@ class Simulation:
                 prob_infect += 2
             elif state_person == Infection.INFECTION_ASIMP:
                 prob_infect += 1.5
+            if self.beacons:
+                self.add_people_beacon(person, node.people_in_this_node)
 
         if n_people != 0:
             if prob_infect > n_people:
@@ -121,9 +146,10 @@ class Simulation:
                     self.change_state(person)
                 # Process States of this person
 
-    @staticmethod
-    def detect_infected(person):
+    def detect_infected(self, person):
         if person.infection is Infection.INFECTION_SIMP and person.time_start_quarantine is None:
+            if self.beacons:
+                self.alert_people(person)
             person.set_quarantine()
 
     def detect_quarantine(self, person):
@@ -268,3 +294,22 @@ class Simulation:
         elif 15 <= rand < 15 + self.immunity:
             person.infection = Infection.IMMUNE
             self.immune += 1
+
+    def alert_people(self, person):
+        for item in person.beacons:
+            if item['person'].infection is Infection.IMMUNE or item['person'].infection is Infection.DEATH:
+                continue
+
+            if not item['person'].is_quarantine():
+                item['person'].set_quarantine()
+            else:
+                item['person'].time_start_quarantine = 0
+
+            #Delete interaction
+            for beacon in item['person'].beacons:
+                if beacon['person'] == person:
+                    item['person'].beacons.remove(beacon)
+
+        #delete beacons tractat
+        person.beacons = []
+

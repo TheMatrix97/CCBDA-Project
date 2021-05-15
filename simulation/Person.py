@@ -6,7 +6,7 @@ class Person:
         self.infection = None  # Incubació (asimptomatic), Infecció (asimptomatic o simptomàtic), Inmune, Mort
         self.time_start_infection = 0
         self.time_start_quarantine = 0
-        self.phone = []
+        self.beacons = []
         self.workplace = None
         self.home = None
         self.school = None
