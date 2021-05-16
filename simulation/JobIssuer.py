@@ -59,7 +59,7 @@ def start_simulation(params):
     table = dynamodb.Table('Simulations')
     response = table.get_item(Key={'id': params['idSimulacio']})
     simParams = response['Item']
-    for i in range(0, simParams['max_rounds']):
+    for i in range(0, int(simParams['max_rounds'])):
         run_round(params)
         response = table.update_item(
             Key={

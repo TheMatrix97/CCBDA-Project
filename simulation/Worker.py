@@ -21,14 +21,14 @@ class Simulation:
         self.node = node
         self.sim_data = None
         self.id_simulacio = self.get_simulacio(id_simulacio)
-        self.round = self.sim_data['round']
-        self.beacons = self.sim_data['beacons']
-        self.time_infection = self.sim_data['time_infection']
-        self.incubation = self.sim_data['incubation']
-        self.mortality = self.sim_data['mortality']
-        self.immunity = self.sim_data['immunity']
-        self.start_others = self.sim_data['start_other_places']
-        self.end_others = self.sim_data['end_other_places']
+        self.round = int(self.sim_data['round'])
+        self.beacons = int(self.sim_data['beacons'])
+        self.time_infection = int(self.sim_data['time_infection'])
+        self.incubation = int(self.sim_data['incubation'])
+        self.mortality = int(self.sim_data['mortality'])
+        self.immunity = int(self.sim_data['immunity'])
+        self.start_others = int(self.sim_data['start_other_places'])
+        self.end_others = int(self.sim_data['end_other_places'])
         #Stats
         self.infected = 0
         self.dead = 0
@@ -48,7 +48,7 @@ class Simulation:
                 'id': self.id_simulacio,
             },
             UpdateExpression="SET stats.infected = :inf + stats.infected, stats.dead = :dead + stats.dead, "
-                             "stats.immune = :immune + stats.immune)",
+                             "stats.immune = :immune + stats.immune",
             ExpressionAttributeValues={
                 ":inf": self.infected,
                 ":dead": self.dead,
@@ -73,7 +73,8 @@ class Simulation:
             self.reduce_beacons_list()
 
         #Save Stats to dynamoDB (update simulation stats)
-        self.save_stats_dynamodb()
+        #TODO REVISAR
+        #self.save_stats_dynamodb()
 
         self.save_node_dynamodb()
 
@@ -102,13 +103,14 @@ class Simulation:
     @staticmethod
     def add_person_remote_node(person, remote_node_id):
         table = dynamodb.Table('City1')
+        person_ser = utils.serialize_people_node([person])[0]
         response = table.update_item(
             Key={
                 'id': remote_node_id,
             },
             UpdateExpression="SET people_in_this_node = list_append(people_in_this_node, :val)",
             ExpressionAttributeValues={
-                ":val": [utils.serialize_people_node([person])[0]]
+                ":val": [person_ser]
             },
             ReturnValues="NONE"
         )
@@ -252,13 +254,16 @@ def listen_jobs():
     queue = sqs.get_queue_by_name(QueueName='workers.fifo')
     while(True):
         response = client_sqs.receive_message(QueueUrl=queue.url, MessageAttributeNames=['All'], WaitTimeSeconds=20)
-        messages = response['Messages']
-        if len(messages) == 0:
+        if 'Messages' not in response:
             time.sleep(10)
         else:
-            sim = Simulation(utils.de_serialize_node(messages[0]['Body']),
-                       messages[0]['MessageAttributes']['idSimulacio']['StringValue'])
-            sim.advance_round()
+            messages = response['Messages']
+            if len(messages) == 0:
+                time.sleep(10)
+            else:
+                sim = Simulation(messages[0]['MessageAttributes']['idSimulacio']['StringValue'],
+                                 utils.de_serialize_node(json.loads(messages[0]['Body'])),)
+                sim.advance_round()
 
 if __name__ == "__main__":
     listen_jobs()

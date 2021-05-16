@@ -26,10 +26,30 @@ def serialize_people_node(people):
             'infection': str(person.infection),
             'time_start_infection': person.time_start_infection,
             'time_start_quarantine': person.time_start_quarantine,
-            'beacons': json.dumps(person.beacons),
+            'beacons': serialize_beacons(person.beacons),
             'workplace': person.workplace,
             'home': person.home,
             'school': person.school
+        }
+        res.append(val)
+    return res
+
+def resum_persona(persona):
+    return {
+        'id': persona.id,
+        'type': persona.type,
+        'agenda': json.dumps(persona.agenda),
+        'infection': str(persona.infection),
+    }
+
+
+
+def serialize_beacons(beacons):
+    res = []
+    for beacon in beacons:
+        val = {
+            'person': resum_persona(beacon['person']),
+            'count': beacon['count']
         }
         res.append(val)
     return res

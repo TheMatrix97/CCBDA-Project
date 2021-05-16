@@ -42,27 +42,6 @@ def store_city_dynamodb():
             print(json_str)
             batch.put_item(Item=json_str)
 
-def read_city_dynamodb():
-    finish = False
-    items = []
-    start_key = None
-    table = dynamodb.Table('City1')
-    while not finish:
-        if start_key:
-            response = table.scan(ExclusiveStartKey=start_key)
-        else:
-            response = table.scan()
-        items.extend(response['Items'])
-        if 'LastEvaluatedKey' not in response:
-            finish = True
-        else:
-            start_key = response['LastEvaluatedKey']
-
-    res = []
-    for item in items:
-        res.append(utils.de_serialize_node(item))
-    print(len(res))
-
 def save_simulation(simulation):
     table = dynamodb.Table("Simulations")
     table.put_item(Item={
@@ -99,6 +78,5 @@ def allocate_city():
     return simulation.city
 
 if __name__ == "__main__":
-    #create_table_dynamodb()
+    create_table_dynamodb()
     store_city_dynamodb()
-    #read_city_dynamodb()
