@@ -20,7 +20,8 @@ class Simulation:
     def __init__(self, id_simulacio, node):
         self.node = node
         self.sim_data = None
-        self.id_simulacio = self.get_simulacio(id_simulacio)
+        self.id_simulacio = id_simulacio
+        self.get_simulacio(id_simulacio)
         self.round = int(self.sim_data['round'])
         self.beacons = int(self.sim_data['beacons'])
         self.time_infection = int(self.sim_data['time_infection'])
@@ -45,7 +46,7 @@ class Simulation:
         table = dynamodb.Table('Simulations')
         response = table.update_item(
             Key={
-                'id': self.id_simulacio,
+                'id': int(self.id_simulacio),
             },
             UpdateExpression="SET stats.infected = :inf + stats.infected, stats.dead = :dead + stats.dead, "
                              "stats.immune = :immune + stats.immune",
@@ -74,7 +75,7 @@ class Simulation:
 
         #Save Stats to dynamoDB (update simulation stats)
         #TODO REVISAR
-        #self.save_stats_dynamodb()
+        self.save_stats_dynamodb()
 
         self.save_node_dynamodb()
 
@@ -261,9 +262,15 @@ def listen_jobs():
             if len(messages) == 0:
                 time.sleep(10)
             else:
+                #Clean sqs so next one message can be queried
+                client_sqs.delete_message(
+                    QueueUrl=queue.url,
+                    ReceiptHandle=messages[0]['ReceiptHandle']
+                )
                 sim = Simulation(messages[0]['MessageAttributes']['idSimulacio']['StringValue'],
                                  utils.de_serialize_node(json.loads(messages[0]['Body'])),)
                 sim.advance_round()
+                print("Processed and deleted message")
 
 if __name__ == "__main__":
     listen_jobs()

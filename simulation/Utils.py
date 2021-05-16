@@ -66,7 +66,7 @@ def de_serialize_people(data):
     res = []
     for person in data:
         pers = Person(person['id'], person['type'])
-        pers.agenda = json.loads(person['agenda'])
+        pers.agenda = person['agenda']
         new_infection = person['infection'].replace("Infection.","")
         if new_infection != 'None':
             pers.infection = Infection[new_infection]
@@ -74,7 +74,7 @@ def de_serialize_people(data):
             pers.infection = None
         pers.time_start_infection = person['time_start_infection']
         pers.time_start_quarantine = person['time_start_quarantine']
-        pers.beacons = json.loads(person['beacons'])
+        pers.beacons = person['beacons']
         pers.workplace = person['workplace']
         pers.home = person['home']
         pers.school = person['school']

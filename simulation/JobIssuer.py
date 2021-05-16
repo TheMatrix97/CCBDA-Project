@@ -65,7 +65,10 @@ def start_simulation(params):
             Key={
                 'id': params['idSimulacio'],
             },
-            UpdateExpression="ADD round",
+            UpdateExpression="SET round = round + :inc",
+            ExpressionAttributeValues={
+                ":inc": 1
+            },
             ReturnValues="NONE"
         )
         print(response)

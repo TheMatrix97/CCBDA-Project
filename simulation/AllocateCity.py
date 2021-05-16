@@ -1,3 +1,4 @@
+import time
 
 from simulation.Simulation import Simulation
 import boto3
@@ -79,4 +80,5 @@ def allocate_city():
 
 if __name__ == "__main__":
     create_table_dynamodb()
+    time.sleep(10)
     store_city_dynamodb()
