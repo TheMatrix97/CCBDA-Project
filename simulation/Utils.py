@@ -1,8 +1,8 @@
 import simplejson as json
 
-from simulation.Node import Node
-from simulation.Person import Person
-from simulation.Type import Type, Infection
+from Node import Node
+from Person import Person
+from Type import Type, Infection
 
 
 def serialize_node(node):
