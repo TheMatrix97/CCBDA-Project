@@ -35,7 +35,7 @@ class Simulation:
         table = dynamodb.Table('Simulations')
         response = table.get_item(Key={'id': int(id_simulacio)})
         self.sim_data = response['Item']
-        print('He trobat una simulacio')
+        #print('He trobat una simulacio')
 
     def save_stats_dynamodb(self):
         table = dynamodb.Table('Simulations')
@@ -52,12 +52,12 @@ class Simulation:
             },
             ReturnValues="NONE"
         )
-        print(response)
+        #print(response)
 
     def save_node_dynamodb(self):
         table = dynamodb.Table("City1")
         resp = table.put_item(Item=utils.serialize_node(self.node))
-        print(resp)
+        #print(resp)
 
 
     def advance_round(self):
@@ -110,7 +110,7 @@ class Simulation:
             },
             ReturnValues="NONE"
         )
-        print(response)
+        #print(response)
 
 
     def detect_infected(self, person):
