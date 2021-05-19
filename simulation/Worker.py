@@ -2,13 +2,8 @@ import copy
 import random
 import time
 import simulation.Utils as utils
-import numpy as np
-
 import simplejson as json
-
 import boto3
-
-from simulation.Person import Person
 from simulation.Type import Infection
 
 sqs = boto3.resource('sqs')
