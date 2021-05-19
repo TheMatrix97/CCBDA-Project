@@ -1,10 +1,10 @@
 import copy
 import random
 import time
-import simulation.Utils as utils
+import Utils as utils
 import simplejson as json
 import boto3
-from simulation.Type import Infection
+from Type import Infection
 
 sqs = boto3.resource('sqs')
 client_sqs = boto3.client('sqs')
@@ -268,6 +268,7 @@ def listen_jobs():
                 print("Processed and deleted message")
 
 if __name__ == "__main__":
+    print("Start listening....")
     listen_jobs()
 
 
