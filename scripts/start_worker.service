@@ -1,0 +1,13 @@
+[Unit]
+Description=Run Python listener worker
+After=network.target
+StartLimitIntervalSec=0
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=ec2-user
+ExecStart=/home/ec2-user/start.sh
+
+[Install]
+WantedBy=multi-user.target
