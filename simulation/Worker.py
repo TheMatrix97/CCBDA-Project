@@ -18,7 +18,7 @@ class Simulation:
         self.id_simulacio = id_simulacio
         self.get_simulacio(id_simulacio)
         self.round = int(self.sim_data['round'])
-        self.beacons = int(self.sim_data['beacons'])
+        self.beacons = True if str(self.sim_data['beacons']) == "True" else False
         self.time_infection = int(self.sim_data['time_infection'])
         self.incubation = int(self.sim_data['incubation'])
         self.mortality = int(self.sim_data['mortality'])
