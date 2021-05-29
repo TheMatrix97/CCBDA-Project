@@ -250,12 +250,13 @@ def listen_jobs():
     queue = sqs.get_queue_by_name(QueueName='workers.fifo')
     while(True):
         response = client_sqs.receive_message(QueueUrl=queue.url, MessageAttributeNames=['All'], WaitTimeSeconds=20)
+        random_t = random.randint(1, 15)
         if 'Messages' not in response:
-            time.sleep(10)
+            time.sleep(random_t)
         else:
             messages = response['Messages']
             if len(messages) == 0:
-                time.sleep(10)
+                time.sleep(random_t)
             else:
                 #Clean sqs so next one message can be queried
                 client_sqs.delete_message(
