@@ -249,8 +249,8 @@ class Simulation:
 def listen_jobs():
     queue = sqs.get_queue_by_name(QueueName='workers.fifo')
     while(True):
-        response = client_sqs.receive_message(QueueUrl=queue.url, MessageAttributeNames=['All'], WaitTimeSeconds=20)
-        random_t = random.randint(1, 15)
+        response = client_sqs.receive_message(QueueUrl=queue.url, MessageAttributeNames=['All'])
+        random_t = random.randint(1, 20)
         if 'Messages' not in response:
             time.sleep(random_t)
         else:
